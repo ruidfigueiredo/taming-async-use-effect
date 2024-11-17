@@ -1,95 +1,53 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+"use client";
+import { useEffect, useState } from "react";
+import { useAsyncEffect } from "./useAsyncEffect";
+import { PretendWork } from "./PretendWork";
+
+const pretendWork = new PretendWork();
 
 export default function Home() {
-  return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol>
-          <li>
-            Get started by editing <code>src/app/page.tsx</code>.
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [componentRerenderCounter, setComponentRerenderCounter] =
+    useState<number>(0);
+  const [isTriggeringReRenders, setIsTriggeringRerenders] = useState(false);
 
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.secondary}
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className={styles.footer}>
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+  useAsyncEffect(async () => {
+    await pretendWork.doWork();
+    if (componentRerenderCounter === 1) {
+      throw new Error(
+        `Failing on render ${componentRerenderCounter} on purpose`
+      );
+    }
+    return async () => {
+      await pretendWork.finishUpWork();
+    };
+  }, [componentRerenderCounter]);
+
+  //uncomment this to check what happens when we don't take care with async effects
+  // useEffect(() => {
+  //   pretendWork.doWork();
+  //   return () => {
+  //     pretendWork.finishUpWork();
+  //   };
+  // }, [componentRerenderCounter]);
+
+  useEffect(() => {
+    if (isTriggeringReRenders) {
+      const intervalId = setInterval(() => {
+        console.log("-------");
+        setComponentRerenderCounter((c) => c + 1);
+      }, 2000);
+      return () => {
+        clearInterval(intervalId);
+      };
+    }
+  }, [isTriggeringReRenders]);
+
+  return (
+    <div>
+      <h1>Call No {componentRerenderCounter}</h1>
+      <button onClick={() => setIsTriggeringRerenders((t) => !t)}>
+        {isTriggeringReRenders ? "Stop" : "Start"}
+      </button>
     </div>
   );
 }
