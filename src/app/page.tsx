@@ -1,26 +1,24 @@
-"use client";
-import { useEffect, useState } from "react";
-import { useAsyncEffect } from "./useAsyncEffect";
-import { PretendWork } from "./PretendWork";
+'use client'
+import {useEffect, useState} from 'react'
+import {useAsyncEffect} from './useAsyncEffect'
+import {PretendWork} from './PretendWork'
 
-const pretendWork = new PretendWork();
+const pretendWork = new PretendWork()
 
 export default function Home() {
-  const [componentRerenderCounter, setComponentRerenderCounter] =
-    useState<number>(0);
-  const [isTriggeringReRenders, setIsTriggeringRerenders] = useState(false);
+  const [componentRerenderCounter, setComponentRerenderCounter] = useState<number>(0)
+  const [isTriggeringReRenders, setIsTriggeringRerenders] = useState(false)
 
   useAsyncEffect(async () => {
-    await pretendWork.doWork();
+    await pretendWork.doWork()
     if (componentRerenderCounter === 1) {
-      throw new Error(
-        `Failing on render ${componentRerenderCounter} on purpose`
-      );
+      throw new Error(`Failing on render ${componentRerenderCounter} on purpose`)
     }
+
     return async () => {
-      await pretendWork.finishUpWork();
-    };
-  }, [componentRerenderCounter]);
+      await pretendWork.finishUpWork()
+    }
+  }, [componentRerenderCounter])
 
   //uncomment this to check what happens when we don't take care with async effects
   // useEffect(() => {
@@ -33,21 +31,19 @@ export default function Home() {
   useEffect(() => {
     if (isTriggeringReRenders) {
       const intervalId = setInterval(() => {
-        console.log("-------");
-        setComponentRerenderCounter((c) => c + 1);
-      }, 2000);
+        console.log('-------')
+        setComponentRerenderCounter((c) => c + 1)
+      }, 2000)
       return () => {
-        clearInterval(intervalId);
-      };
+        clearInterval(intervalId)
+      }
     }
-  }, [isTriggeringReRenders]);
+  }, [isTriggeringReRenders])
 
   return (
     <div>
       <h1>Call No {componentRerenderCounter}</h1>
-      <button onClick={() => setIsTriggeringRerenders((t) => !t)}>
-        {isTriggeringReRenders ? "Stop" : "Start"}
-      </button>
+      <button onClick={() => setIsTriggeringRerenders((t) => !t)}>{isTriggeringReRenders ? 'Stop' : 'Start'}</button>
     </div>
-  );
+  )
 }
