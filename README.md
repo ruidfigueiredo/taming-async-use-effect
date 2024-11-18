@@ -19,75 +19,69 @@ Doing work for call #2
 
 ```typescript
 class PretendWork {
-  counter: number = 0;
+  counter: number = 0
 
   async doWork() {
-    console.log(`${++this.counter} doWork`);
-    await new Promise((r) => setTimeout(r, Math.random() * 1000));
-    console.log(`${this.counter} done work`);
+    console.log(`${++this.counter} doWork`)
+    await new Promise((r) => setTimeout(r, Math.random() * 1000))
+    console.log(`${this.counter} done work`)
   }
   async finishUpWork() {
-    console.log(`${this.counter} finishUpWork`);
-    await new Promise((r) => setTimeout(r, Math.random() * 1000));
-    console.log(`${this.counter} done finishUpWork`);
+    console.log(`${this.counter} finishUpWork`)
+    await new Promise((r) => setTimeout(r, Math.random() * 1000))
+    console.log(`${this.counter} done finishUpWork`)
   }
 }
 
 //DO NOT USE THIS VERSION. IF THERE'S AN ERROR IN THE EFFECT FUNCTION, THIS VERSION WON'T BE ABLE TO RECOVER
 //USE THE VERSION AT THE END OR IN THE CODE
-function useAsyncEffect(
-  effect: () => Promise<() => Promise<any>>,
-  deps: React.DependencyList
-) {
-  const previousRun = useRef<Promise<any> | null>(null);
+function useAsyncEffect(effect: () => Promise<() => Promise<any>>, deps: React.DependencyList) {
+  const previousRun = useRef<Promise<any> | null>(null)
   useEffect(() => {
-    let thisRun: Promise<any>;
+    let thisRun: Promise<any>
     if (previousRun.current) {
-      thisRun = previousRun.current.then(() => effect());
+      thisRun = previousRun.current.then(() => effect())
     } else {
-      thisRun = effect();
+      thisRun = effect()
     }
 
     return () => {
-      previousRun.current = thisRun.then((cleanup) => cleanup());
-    };
-  }, deps);
+      previousRun.current = thisRun.then((cleanup) => cleanup())
+    }
+  }, deps)
 }
 
-const pretendWork = new PretendWork();
+const pretendWork = new PretendWork()
 
 export default function Home() {
-  const [componentRerenderCounter, setComponentRerenderCounter] =
-    useState<number>(0);
-  const [isTriggeringReRenders, setIsTriggeringRerenders] = useState(false);
+  const [componentRerenderCounter, setComponentRerenderCounter] = useState<number>(0)
+  const [isTriggeringReRenders, setIsTriggeringRerenders] = useState(false)
 
   useAsyncEffect(async () => {
-    await pretendWork.doWork();
+    await pretendWork.doWork()
     return async () => {
-      await pretendWork.finishUpWork();
-    };
-  }, [componentRerenderCounter]);
+      await pretendWork.finishUpWork()
+    }
+  }, [componentRerenderCounter])
 
   useEffect(() => {
     if (isTriggeringReRenders) {
       const intervalId = setInterval(() => {
-        console.log("-------");
-        setComponentRerenderCounter((c) => c + 1);
-      }, 2000);
+        console.log('-------')
+        setComponentRerenderCounter((c) => c + 1)
+      }, 2000)
       return () => {
-        clearInterval(intervalId);
-      };
+        clearInterval(intervalId)
+      }
     }
-  }, [isTriggeringReRenders]);
+  }, [isTriggeringReRenders])
 
   return (
     <div>
       <h1>Call No {componentRerenderCounter}</h1>
-      <button onClick={() => setIsTriggeringRerenders((t) => !t)}>
-        {isTriggeringReRenders ? "Stop" : "Start"}
-      </button>
+      <button onClick={() => setIsTriggeringRerenders((t) => !t)}>{isTriggeringReRenders ? 'Stop' : 'Start'}</button>
     </div>
-  );
+  )
 }
 ```
 
@@ -118,13 +112,15 @@ Solution is to catch errors, log them but always return a resolved promise insid
 Final version of useAsyncEffect:
 
 ```typescript
-function useAsyncEffect(
-  effect: () => Promise<() => Promise<any>>,
+import {useRef, useEffect} from 'react'
+
+export function useAsyncEffect(
+  effect: () => Promise<() => ReturnType<typeof useEffect> | Promise<ReturnType<typeof useEffect>>>,
   deps: React.DependencyList
 ) {
-  const previousRun = useRef<Promise<any> | null>(null);
+  const previousRun = useRef<Promise<any> | null>(null)
   useEffect(() => {
-    let thisRun: Promise<any>;
+    let thisRun: Promise<any>
     if (previousRun.current) {
       thisRun = previousRun.current
         .then(() => effect())
@@ -132,24 +128,21 @@ function useAsyncEffect(
           console.error(
             `Error in useAsyncEffect, cleanup function won't be executed. Make sure you handle errors in your effect to avoid this. Error details:`,
             e
-          );
-          return () => {};
-        });
+          )
+          return () => {}
+        })
     } else {
-      thisRun = effect();
+      thisRun = effect()
     }
 
     return () => {
       previousRun.current = thisRun
         .then((cleanup) => cleanup())
         .catch((e) => {
-          console.error(
-            `Error in cleanup function of useAsyncEffect. Error details:`,
-            e
-          );
-        });
-    };
-  }, deps);
+          console.error(`Error in cleanup function of useAsyncEffect. Error details:`, e)
+        })
+    }
+  }, deps)
 }
 ```
 
